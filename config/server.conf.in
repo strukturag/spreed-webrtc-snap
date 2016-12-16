@@ -32,6 +32,7 @@ listen = 127.0.0.1:8080
 ;readtimeout = 10
 ; HTTPS socket write timeout in seconds.
 ;writetimeout = 10
+https = off
 
 [app]
 ; HTML page title
