@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 umask 027
@@ -29,7 +29,7 @@ cleanup () {
 	if [ -n "$SPREED_WEBRTC_PID" ]; then
 		kill -TERM $SPREED_WEBRTC_PID 2>/dev/null
 	fi
-	rm -f "$SNAP_APP_TMPDIR/spreed-webrtc.conf"
+    rm -f "$SNAP_DATA/spreed-webrtc.conf"
 	echo "Done."
 }
 trap "cleanup" INT QUIT TERM EXIT
@@ -46,6 +46,9 @@ config () {
 }
 
 make_tls_key_and_cert () {
+    if [ ! -f "$SERVER_CONF" ]; then
+        return
+    fi
 	if grep -Fxq "https = off" "$SERVER_CONF"; then
 		return
 	fi
@@ -72,8 +75,12 @@ spreed_webrtc () {
 	s|certificate = .*|certificate = $TLS_CERT|; \
 	" $SERVER_CONF > "$SNAP_DATA/spreed-webrtc.conf"
 
+    # Create hooks configuration.
+    settings
+
 	"$SNAP/sbin/spreed-webrtc-server" -c "$SNAP_DATA/spreed-webrtc.conf" &
 	SPREED_WEBRTC_PID=$!
+    echo $! > $SNAP_DATA/spreed_webrtc_pid
 }
 
 redirector () {
@@ -82,12 +89,17 @@ redirector () {
 	fi
 	"$SNAP/bin/redirector" --port $REDIRECTOR_PORT $WEBAPP_PORT &
 	REDIRECTOR_PID=$!
+    echo $! > $SNAP_DATA/redirector_pid
 }
 
-make_tls_key_and_cert
-config
-redirector
-spreed_webrtc
+launch() {
+    make_tls_key_and_cert
+    config
+    redirector
+    spreed_webrtc
 
-echo "Running $SPREED_WEBRTC_PID ..."
-wait $SPREED_WEBRTC_PID
+    echo "Running $SPREED_WEBRTC_PID ..."
+    wait $SPREED_WEBRTC_PID
+}
+
+launch

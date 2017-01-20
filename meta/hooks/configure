@@ -1,0 +1,37 @@
+#!/bin/sh
+
+CUS_CONF="${SNAP_DATA}/custom_config"
+
+test -f $CUS_CONF && rm $CUS_CONF
+
+if ! enable_https=$(snapctl get enable-https); then
+    echo "enable_https is: $enable_https "
+    exit 1
+fi
+
+if ! http_port=$(snapctl get http-port); then
+    echo "http_port is: $http_port"
+    exit 1
+fi
+
+if ! https_port=$(snapctl get https-port); then
+    echo "https_port is: $https_port"
+    exit 1
+fi
+
+if ! readtimeout=$(snapctl get readtimeout); then
+    echo "readtimeout is: $readtimeout second(s)"
+    exit 1
+fi
+
+if ! writetimeout=$(snapctl get writetimeout); then
+    echo "writetimeout is: $writetimeout second(s)"
+    exit 1
+fi
+
+echo "enable_https=$enable_https" > $CUS_CONF
+echo "http_port=$http_port" >> $CUS_CONF
+echo "https_port=$https_port" >> $CUS_CONF
+echo "readtimeout=$readtimeout" >> $CUS_CONF
+echo "writetimeout=$writetimeout" >> $CUS_CONF
+chmod 600 $CUS_CONF
