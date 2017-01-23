@@ -69,11 +69,11 @@ make_tls_key_and_cert () {
 
 spreed_webrtc () {
 	# Create runtime configuration.
-	sed "\
+	cat $SERVER_CONF | sed "\
 	s|root = .*|root = $SNAP/share/spreed-webrtc-server/www|; \
 	s|key = .*|key = $TLS_KEY|; \
 	s|certificate = .*|certificate = $TLS_CERT|; \
-	" $SERVER_CONF > "$SNAP_DATA/spreed-webrtc.conf"
+	" > "$SNAP_DATA/spreed-webrtc.conf"
 
     # Create hooks configuration.
     settings

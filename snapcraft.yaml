@@ -1,5 +1,5 @@
-name: spreed-webrtc
-version: 0.24.11-3
+name: spreed-webrtc-snap
+version: 0.24.11-4
 summary: WebRTC audio/video calls and conferences
 description: |
   Spreed WebRTC implements a WebRTC audio/video call and conferencing server and web client.
