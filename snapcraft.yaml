@@ -1,21 +1,36 @@
-name: spreed-webrtc
-version: 0.24.11-1
+name: spreed-webrtc-snap
+version: 0.24.11-4
 summary: WebRTC audio/video calls and conferences
-description: Spreed WebRTC implements a WebRTC audio/video call and conferencing server and web client
-icon: spreedWaves.svg
+description: |
+  Spreed WebRTC implements a WebRTC audio/video call and conferencing server and web client.
+
+  Ater install, you can visit spreed webrtc by navigating browser with the following address.
+    http://localhost:8084
+
+  To enable plain http without ssl for all connections, please run the following command.
+  $ sudo snap disable spreed-webrtc
+  $ sudo snap set spreed-webrtc enable-https=true
+  $ sudo snap enable spreed-webrtc
+
+  And then visit the following address.
+    https://localhost:8443
+    supported parameters:
+    - enable-https: To enable ssl for all connections. The default value is 'on'. The value 'off' to disable https.
+    - http-port: The socket port which spreed webrtc uses for HTTP client requests. The default value is '8084'.
+    - https-port: The socket port which spreed webrtc uses for HTTPS client requests. The default value is '8443'.
+    - readtimeout: HTTP socket read timeout in seconds. The default value is '10'.
+    - writetimeout: HTTP socket write timeout in seconds. The default value is '10'.
+
+
+grade: stable
+confinement: strict
 
 apps:
   spreed-webrtc:
-    command: bin/start
+    command: bin/run-spreed-webrtc
     daemon: simple
-    uses: [listener-service]
-
-uses:
-  listener-service:
-    type: migration-skill
-    caps: [network-listener, network-service]
-
-config: bin/config
+    restart-condition: always
+    plugs: [network,network-bind]
 
 parts:
   spreed:
@@ -24,14 +39,10 @@ parts:
     source-type: git
     source-branch: develop
     build-packages: [golang-go, nodejs]
-  glue:
+    stage-packages: [openssl]
+  conf:
     plugin: copy
     files:
-      start: bin/start
-      ssleay.cnf: ssleay.cnf
-      redirector: bin/redirector
-  config:
-    plugin: copy
-    files:
-      config.py: bin/config
-      server.conf.in: server.conf.in
+      bin/*: bin/
+      config/*: config/
+      meta/hooks/configure: meta/hooks/configure

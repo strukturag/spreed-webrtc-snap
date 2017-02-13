@@ -1,0 +1,62 @@
+#!/bin/bash
+
+source $SNAP_DATA/custom_config
+spreed_webrtc_conf="${SNAP_DATA}/spreed-webrtc.conf"
+
+DEFAULT_HTTP_PORT=8084
+DEFAULT_HTTPS_PORT=8443
+DEFAULT_HTTPS_STATUS=off
+
+HTTP_PORT=""
+HTTPS_PORT=""
+HTTPS_STATUS=""
+
+params=("enable_https" "http_port" "https_port" "readtimeout" "writetimeout")
+length=${#params[@]}
+
+#sed -i in-place option is not available by default on some other distro.
+modify() {
+    sed -u "$1" ${spreed_webrtc_conf} > ${spreed_webrtc_conf}.bak && mv ${spreed_webrtc_conf}.bak ${spreed_webrtc_conf}
+}
+
+modify '/listen/d; /readtimeout/d; /writetimeout/d; /https =/d'
+
+for ((i = 0; i < $length; i++))
+do
+  echo "customized config: ${params[i]}=${!params[i]}"
+  if [ ! -z "${!params[i]}" ]; then
+      test ${params[i]} == "enable_https" && HTTPS_STATUS=${!params[i]}
+      test ${params[i]} == "https_port"   && HTTPS_PORT=${!params[i]}
+      test ${params[i]} == "http_port"    && HTTP_PORT=${!params[i]}
+      if [ ${params[i]} == "readtimeout" ] || [ ${params[i]} == "writetimeout" ]; then
+          line_num=$((`sed -n '/\[http\]/=' ${spreed_webrtc_conf}` + 1))
+          modify "${line_num}i${params[i]} = ${!params[i]}"
+          line_num=$((`sed -n '/\[https\]/=' ${spreed_webrtc_conf}` + 1))
+          modify "${line_num}i${params[i]} = ${!params[i]}"
+      fi
+  fi
+done
+
+
+if [ -z ${HTTPS_STATUS} ] || [ ${HTTPS_STATUS} == off ] ; then
+    line_num=$((`sed -n '/\[https\]/=' ${spreed_webrtc_conf}` + 1))
+    modify "${line_num}ihttps = ${DEFAULT_HTTPS_STATUS}"
+    #only set https_port if https is enabled.
+    if [ -z ${HTTP_PORT} ] ; then
+        line_num=$((`sed -n '/\[http\]/=' ${spreed_webrtc_conf}` + 1))
+        modify "${line_num}ilisten = :${DEFAULT_HTTP_PORT}"
+    else
+        line_num=$((`sed -n '/\[http\]/=' ${spreed_webrtc_conf}` + 1))
+        modify "${line_num}ilisten = :${HTTP_PORT}"
+    fi
+else
+    line_num=$((`sed -n '/\[https\]/=' ${spreed_webrtc_conf}` + 1))
+    modify "${line_num}ihttps = ${HTTPS_STATUS}"
+    if [ -z ${HTTPS_PORT} ] ; then
+        line_num=$((`sed -n '/\[https\]/=' ${spreed_webrtc_conf}` + 1))
+        modify "${line_num}ilisten = :${DEFAULT_HTTPS_PORT}"
+    else
+        modify "${line_num}ilisten = :${HTTPS_PORT}"
+    fi
+fi
+
